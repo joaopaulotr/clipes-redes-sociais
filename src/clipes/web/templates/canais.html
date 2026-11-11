@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Canais · Clipes{% endblock %}
+{% block conteudo %}
+<h1 class="text-xl font-bold mb-1">Canais</h1>
+<p class="text-sm text-zinc-400 mb-4">Posição da webcam detectada por canal. Se o layout do clipe saiu errado, clique em "Detectar de novo" e reprocesse o envio.</p>
+{% if not canais %}
+<p class="text-zinc-500 text-sm">Nenhum canal analisado ainda.</p>
+{% else %}
+<div class="divide-y divide-zinc-800 rounded-xl border border-zinc-800 overflow-hidden">
+  {% for c in canais %}
+  <div class="flex items-center gap-4 px-4 py-3 bg-zinc-900">
+    <div class="flex-1 min-w-0">
+      <div class="font-medium truncate">{{ c.nome }}</div>
+      <div class="text-xs text-zinc-500">{{ "webcam: " ~ c.webcam if c.webcam != "null" else "sem webcam (fundo desfocado)" }}</div>
+    </div>
+    <form action="/canais/esquecer" method="post">
+      <input type="hidden" name="nome" value="{{ c.nome }}">
+      <button class="text-xs rounded border border-zinc-600 px-3 py-1 hover:border-zinc-300">Detectar de novo</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
