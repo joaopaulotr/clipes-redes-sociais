@@ -1,21 +1,29 @@
 {% extends "base.html" %}
 {% block titulo %}Canais · Clipes{% endblock %}
 {% block conteudo %}
-<h1 class="text-xl font-bold mb-1">Canais</h1>
-<p class="text-sm text-zinc-400 mb-4">Posição da webcam detectada por canal. Se o layout do clipe saiu errado, clique em "Detectar de novo" e reprocesse o envio.</p>
+<div class="entrar mb-8">
+  <p class="rotulo mb-3">Layout por streamer</p>
+  <h1 class="titulo-tela text-3xl sm:text-4xl mb-3">Canais</h1>
+  <p class="text-sm text-nevoa max-w-2xl">Posição da webcam detectada por canal. Se o layout do clipe saiu errado, clique em
+    <b class="text-giz">Detectar de novo</b> e reprocesse o envio.</p>
+</div>
 {% if not canais %}
-<p class="text-zinc-500 text-sm">Nenhum canal analisado ainda.</p>
+<div class="entrar painel border-dashed p-10 text-center" style="--i:1">
+  <p class="font-display font-bold mb-1">Nenhum canal analisado ainda</p>
+  <p class="text-sm text-nevoa">Os canais aparecem aqui depois do primeiro clipe gerado.</p>
+</div>
 {% else %}
-<div class="divide-y divide-zinc-800 rounded-xl border border-zinc-800 overflow-hidden">
+<div class="entrar painel overflow-hidden divide-y divide-linha" style="--i:1">
   {% for c in canais %}
-  <div class="flex items-center gap-4 px-4 py-3 bg-zinc-900">
+  <div class="flex items-center gap-4 px-4 sm:px-5 py-3.5">
+    <span class="grid place-items-center size-9 shrink-0 rounded-lg bg-roxo-fundo border border-roxo/40 font-display font-bold text-roxo-claro">{{ c.nome[:1]|upper }}</span>
     <div class="flex-1 min-w-0">
-      <div class="font-medium truncate">{{ c.nome }}</div>
-      <div class="text-xs text-zinc-500">{{ "webcam: " ~ c.webcam if c.webcam != "null" else "sem webcam (fundo desfocado)" }}</div>
+      <div class="font-semibold truncate">{{ c.nome }}</div>
+      <div class="font-mono text-xs text-nevoa truncate">{{ "webcam " ~ c.webcam if c.webcam != "null" else "sem webcam · fundo desfocado" }}</div>
     </div>
     <form action="/canais/esquecer" method="post">
       <input type="hidden" name="nome" value="{{ c.nome }}">
-      <button class="text-xs rounded border border-zinc-600 px-3 py-1 hover:border-zinc-300">Detectar de novo</button>
+      <button class="btn btn-pequeno">Detectar de novo</button>
     </form>
   </div>
   {% endfor %}

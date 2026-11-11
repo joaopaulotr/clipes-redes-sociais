@@ -21,12 +21,12 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 _parar = threading.Event()
 
 STATUS_JOB = {
-    "na_fila": ("Na fila", "bg-zinc-700"),
-    "resolvendo": ("Lendo vídeo", "bg-sky-700"),
-    "sinais": ("Procurando momentos", "bg-sky-700"),
-    "processando": ("Gerando clipes", "bg-amber-600"),
-    "pronto": ("Pronto", "bg-emerald-700"),
-    "erro": ("Erro", "bg-red-700"),
+    "na_fila": ("Na fila", "chip"),
+    "resolvendo": ("Lendo vídeo", "chip chip-roxo chip-vivo"),
+    "sinais": ("Procurando momentos", "chip chip-roxo chip-vivo"),
+    "processando": ("Gerando clipes", "chip chip-roxo chip-vivo"),
+    "pronto": ("Pronto", "chip chip-branco"),
+    "erro": ("Erro", "chip chip-alerta"),
 }
 templates.env.globals["STATUS_JOB"] = STATUS_JOB
 
