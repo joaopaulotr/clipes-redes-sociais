@@ -1,0 +1,21 @@
+{% if not jobs %}
+<p class="text-zinc-500 text-sm">Nada enviado ainda.</p>
+{% else %}
+<div class="divide-y divide-zinc-800 rounded-xl border border-zinc-800 overflow-hidden">
+  {% for j in jobs %}
+  {% set rotulo, cor = STATUS_JOB.get(j.status, (j.status, "bg-zinc-700")) %}
+  <a href="/job/{{ j.id }}" class="flex items-center gap-4 px-4 py-3 bg-zinc-900 hover:bg-zinc-800">
+    <span class="text-xs font-bold rounded px-2 py-1 {{ cor }} whitespace-nowrap">{{ rotulo }}</span>
+    <div class="min-w-0 flex-1">
+      <div class="truncate font-medium">{{ j.titulo or j.origem }}</div>
+      <div class="truncate text-xs text-zinc-500">
+        {{ j.tipo or "" }}{% if j.canal %} · {{ j.canal }}{% endif %}{% if j.etapa %} · {{ j.etapa }}{% endif %}
+        {% if j.erro %}<span class="text-red-400"> · {{ j.erro[:120] }}</span>{% endif %}
+      </div>
+    </div>
+    {% if j.em_revisao %}<span class="text-xs rounded-full bg-amber-500 text-black font-bold px-2 py-0.5">{{ j.em_revisao }} p/ revisar</span>{% endif %}
+    {% if j.aprovados %}<span class="text-xs rounded-full bg-emerald-600 font-bold px-2 py-0.5">{{ j.aprovados }} ✓</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}

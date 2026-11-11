@@ -1,0 +1,49 @@
+<div class="rounded-xl border {{ 'border-red-700' if c.spoiler else 'border-zinc-800' }} bg-zinc-900 overflow-hidden flex flex-col h-full">
+  {% if c.arquivo %}
+  <video src="/clipe/{{ c.id }}/video" controls preload="metadata" playsinline class="w-full aspect-[9/16] bg-black"></video>
+  {% else %}
+  <div class="w-full aspect-[9/16] bg-black flex items-center justify-center text-zinc-600 text-sm p-4 text-center">
+    {{ c.status }}{% if c.erro %}<br>{{ c.erro[:200] }}{% endif %}
+  </div>
+  {% endif %}
+  <div class="p-3 space-y-2 flex-1 flex flex-col">
+    <div class="flex flex-wrap items-center gap-2 text-xs">
+      {% if c.nota_llm is not none %}<span class="rounded bg-zinc-700 px-2 py-0.5 font-bold">nota {{ c.nota_llm }}</span>{% endif %}
+      {% if c.categoria %}<span class="rounded bg-zinc-800 px-2 py-0.5">{{ c.categoria }}</span>{% endif %}
+      <span class="text-zinc-500">{{ "%d:%02d"|format(c.inicio // 60, c.inicio % 60) }}–{{ "%d:%02d"|format(c.fim // 60, c.fim % 60) }} · {{ (c.fim - c.inicio)|round|int }}s</span>
+      {% if c.status in ("aprovado", "rejeitado") %}
+      <span class="rounded px-2 py-0.5 font-bold {{ 'bg-emerald-700' if c.status == 'aprovado' else 'bg-zinc-700' }}">{{ c.status }}</span>
+      {% endif %}
+    </div>
+    {% if c.spoiler %}
+    <div class="text-xs rounded bg-red-950 border border-red-800 text-red-200 p-2">⚠ Spoiler: {{ c.spoiler_motivo or "suspeita" }}</div>
+    {% endif %}
+    <form hx-post="/clipe/{{ c.id }}/titulo" hx-target="#clipe-{{ c.id }}" hx-swap="innerHTML" class="flex gap-1">
+      <input name="titulo" value="{{ c.titulo or '' }}" class="flex-1 min-w-0 rounded bg-zinc-950 border border-zinc-700 px-2 py-1 text-sm">
+      <button class="text-xs rounded border border-zinc-600 px-2 hover:border-zinc-300" title="Salvar título">💾</button>
+    </form>
+    {% if c.gancho %}<div class="text-xs text-zinc-400">Gancho: <span class="text-zinc-200">{{ c.gancho }}</span></div>{% endif %}
+    {% if c.descricao or c.hashtags %}
+    <div class="text-xs text-zinc-400 whitespace-pre-line" id="desc-{{ c.id }}">{{ c.descricao or "" }}
+{{ c.hashtags or "" }}</div>
+    {% endif %}
+    <div class="mt-auto pt-2 grid grid-cols-2 gap-2 text-sm">
+      {% if c.status != "aprovado" %}
+      <button hx-post="/clipe/{{ c.id }}/aprovar" hx-target="#clipe-{{ c.id }}" class="rounded bg-emerald-600 font-bold py-1.5 hover:bg-emerald-500">Aprovar</button>
+      {% else %}
+      <button hx-post="/clipe/{{ c.id }}/revisar" hx-target="#clipe-{{ c.id }}" class="rounded border border-zinc-600 py-1.5 hover:border-zinc-300">Desfazer</button>
+      {% endif %}
+      {% if c.status != "rejeitado" %}
+      <button hx-post="/clipe/{{ c.id }}/rejeitar" hx-target="#clipe-{{ c.id }}" class="rounded bg-zinc-700 py-1.5 hover:bg-zinc-600">Rejeitar</button>
+      {% else %}
+      <button hx-post="/clipe/{{ c.id }}/revisar" hx-target="#clipe-{{ c.id }}" class="rounded border border-zinc-600 py-1.5 hover:border-zinc-300">Desfazer</button>
+      {% endif %}
+      {% if c.arquivo %}
+      <a href="/clipe/{{ c.id }}/video?baixar=true" class="text-center rounded border border-zinc-600 py-1.5 hover:border-zinc-300">⬇ Baixar</a>
+      {% endif %}
+      <button type="button" class="rounded border border-zinc-600 py-1.5 hover:border-zinc-300"
+        onclick="navigator.clipboard.writeText(this.dataset.t).then(()=>{this.textContent='Copiado ✓'})"
+        data-t="{{ (c.titulo or '') ~ '\n\n' ~ (c.descricao or '') ~ '\n' ~ (c.hashtags or '') }}">Copiar texto</button>
+    </div>
+  </div>
+</div>

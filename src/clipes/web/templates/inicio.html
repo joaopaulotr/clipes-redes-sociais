@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block conteudo %}
+{% if sem_chave %}
+<div class="mb-6 rounded-lg border border-red-800 bg-red-950 p-4 text-sm">
+  <b>OPENAI_API_KEY</b> não configurada. Copie <code>.env.example</code> para <code>.env</code>, coloque sua chave e reinicie.
+</div>
+{% endif %}
+
+<section class="rounded-xl border border-zinc-800 bg-zinc-900 p-5 mb-8">
+  <h1 class="text-xl font-bold mb-1">Enviar vídeos</h1>
+  <p class="text-sm text-zinc-400 mb-4">YouTube, VOD ou clipe da Twitch, Kick, link .mp4 — um por linha. Ou suba um arquivo.</p>
+  <form action="/enviar" method="post" enctype="multipart/form-data" class="space-y-4">
+    <textarea name="links" rows="4" placeholder="https://www.twitch.tv/videos/123456789&#10;https://www.youtube.com/watch?v=...&#10;https://clips.twitch.tv/..."
+      class="w-full rounded-lg bg-zinc-950 border border-zinc-700 p-3 font-mono text-sm focus:outline-none focus:border-zinc-400"></textarea>
+    <div class="flex flex-wrap items-end gap-4">
+      <label class="text-sm">
+        <span class="block text-zinc-400 mb-1">Arquivo MP4 (opcional)</span>
+        <input type="file" name="arquivo" accept="video/mp4,video/quicktime,video/x-matroska,video/webm"
+          class="text-sm file:mr-3 file:rounded file:border-0 file:bg-zinc-700 file:px-3 file:py-1.5 file:text-white">
+      </label>
+      <label class="text-sm">
+        <span class="block text-zinc-400 mb-1">Máx. de clipes por vídeo</span>
+        <input type="number" name="max_clipes" value="{{ max_padrao }}" min="1" max="100"
+          class="w-24 rounded-lg bg-zinc-950 border border-zinc-700 p-2">
+      </label>
+      <button class="ml-auto rounded-lg bg-white text-black font-bold px-5 py-2 hover:bg-zinc-200">Gerar clipes</button>
+    </div>
+  </form>
+</section>
+
+<section>
+  <h2 class="text-lg font-bold mb-3">Envios</h2>
+  <div hx-get="/parcial/jobs" hx-trigger="every 3s" hx-swap="innerHTML">
+    {% include "_jobs.html" %}
+  </div>
+</section>
+{% endblock %}

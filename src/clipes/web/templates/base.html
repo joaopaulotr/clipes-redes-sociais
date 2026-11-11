@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR" class="bg-zinc-950 text-zinc-100">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Clipes{% endblock %}</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js" integrity="sha384-XXN6/S6yXj8EpXnBTw3JGR9ZM+hixGxFCLYn0FHtg9cWh0ziKmAgTPEhecbCDOmj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+</head>
+<body class="min-h-screen bg-zinc-950">
+  <header class="border-b border-zinc-800">
+    <nav class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-6">
+      <a href="/" class="font-black text-lg tracking-tight">🎬 Clipes</a>
+      <a href="/" class="text-sm text-zinc-400 hover:text-white">Envios</a>
+      <a href="/canais" class="text-sm text-zinc-400 hover:text-white">Canais</a>
+    </nav>
+  </header>
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    {% block conteudo %}{% endblock %}
+  </main>
+</body>
+</html>
