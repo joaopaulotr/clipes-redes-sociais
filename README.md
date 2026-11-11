@@ -2,7 +2,18 @@
 
 Envia um vídeo (YouTube, VOD ou clipe da Twitch, Kick, link .mp4 ou arquivo) e recebe **vários clipes
 verticais 9:16** com legenda, gancho, título, hashtags e alerta de spoiler, prontos para revisar.
-Roda no seu PC. Detalhes do desenho em [docs/spec.md](docs/spec.md).
+Roda no seu PC.
+
+## Documentação (spec-driven)
+
+O projeto segue o padrão do [GitHub Spec Kit](https://github.com/github/spec-kit):
+
+- [`.specify/memory/constitution.md`](.specify/memory/constitution.md): princípios que toda mudança segue
+- [`.specify/templates/`](.specify/templates/): modelos de `spec.md`, `plan.md` e `tasks.md`
+- [`specs/001-mvp1-clipador/`](specs/001-mvp1-clipador/): spec (o quê), plano (como) e tarefas do MVP1
+
+Feature nova: crie `specs/NNN-nome/` a partir dos modelos **antes** de codar.
+Quem usa Claude Code tem a skill `developing-clipes` em `.claude/skills/`, que segue esse fluxo.
 
 ## Requisitos
 
