@@ -1,35 +1,56 @@
 {% extends "base.html" %}
 {% block conteudo %}
 {% if sem_chave %}
-<div class="mb-6 rounded-lg border border-red-800 bg-red-950 p-4 text-sm">
-  <b>OPENAI_API_KEY</b> não configurada. Copie <code>.env.example</code> para <code>.env</code>, coloque sua chave e reinicie.
+<div class="entrar mb-8 flex items-start gap-3 rounded-xl border border-alerta/50 bg-alerta-fundo p-4 text-sm">
+  <span class="chip chip-alerta">chave</span>
+  <p><b>OPENAI_API_KEY</b> não configurada. Copie <code class="font-mono text-roxo-claro">.env.example</code> para
+    <code class="font-mono text-roxo-claro">.env</code>, coloque sua chave e reinicie.</p>
 </div>
 {% endif %}
 
-<section class="rounded-xl border border-zinc-800 bg-zinc-900 p-5 mb-8">
-  <h1 class="text-xl font-bold mb-1">Enviar vídeos</h1>
-  <p class="text-sm text-zinc-400 mb-4">YouTube, VOD ou clipe da Twitch, Kick, link .mp4 — um por linha. Ou suba um arquivo.</p>
-  <form action="/enviar" method="post" enctype="multipart/form-data" class="space-y-4">
-    <textarea name="links" rows="4" placeholder="https://www.twitch.tv/videos/123456789&#10;https://www.youtube.com/watch?v=...&#10;https://clips.twitch.tv/..."
-      class="w-full rounded-lg bg-zinc-950 border border-zinc-700 p-3 font-mono text-sm focus:outline-none focus:border-zinc-400"></textarea>
+<div class="entrar mb-8" style="--i:0">
+  <p class="rotulo mb-3">Estúdio de corte</p>
+  <h1 class="titulo-tela text-3xl sm:text-5xl max-w-3xl">
+    Cole o link. <span class="text-roxo">A gente acha</span> os momentos.
+  </h1>
+</div>
+
+<section class="entrar painel relative overflow-hidden p-5 sm:p-7 mb-12" style="--i:1">
+  <div class="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-roxo/20 blur-3xl"></div>
+  <div class="relative flex flex-wrap items-baseline justify-between gap-2 mb-4">
+    <h2 class="font-display font-bold text-lg">Enviar vídeos</h2>
+    <p class="text-sm text-nevoa">YouTube, VOD ou clipe da Twitch, Kick, link .mp4. Um por linha.</p>
+  </div>
+  <form action="/enviar" method="post" enctype="multipart/form-data" class="relative space-y-5">
+    <label class="block">
+      <span class="sr-only">Links dos vídeos</span>
+      <textarea name="links" rows="4" placeholder="https://www.twitch.tv/videos/123456789&#10;https://www.youtube.com/watch?v=...&#10;https://clips.twitch.tv/..."
+        class="campo font-mono text-sm leading-relaxed"></textarea>
+    </label>
     <div class="flex flex-wrap items-end gap-4">
       <label class="text-sm">
-        <span class="block text-zinc-400 mb-1">Arquivo MP4 (opcional)</span>
+        <span class="rotulo block mb-1.5">Arquivo (opcional)</span>
         <input type="file" name="arquivo" accept="video/mp4,video/quicktime,video/x-matroska,video/webm"
-          class="text-sm file:mr-3 file:rounded file:border-0 file:bg-zinc-700 file:px-3 file:py-1.5 file:text-white">
+          class="text-sm text-nevoa file:mr-3 file:rounded-lg file:border file:border-linha file:bg-grafite file:px-3 file:py-1.5 file:font-semibold file:text-giz hover:file:border-roxo-claro file:cursor-pointer">
       </label>
       <label class="text-sm">
-        <span class="block text-zinc-400 mb-1">Máx. de clipes por vídeo</span>
-        <input type="number" name="max_clipes" value="{{ max_padrao }}" min="1" max="100"
-          class="w-24 rounded-lg bg-zinc-950 border border-zinc-700 p-2">
+        <span class="rotulo block mb-1.5">Máx. de clipes</span>
+        <input type="number" name="max_clipes" value="{{ max_padrao }}" min="1" max="100" class="campo w-24 font-mono">
       </label>
-      <button class="ml-auto rounded-lg bg-white text-black font-bold px-5 py-2 hover:bg-zinc-200">Gerar clipes</button>
+      <button class="btn btn-primario ml-auto px-6 h-11 text-base">
+        Gerar clipes
+        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
     </div>
   </form>
 </section>
 
-<section>
-  <h2 class="text-lg font-bold mb-3">Envios</h2>
+<section class="entrar" style="--i:2">
+  <div class="flex items-center gap-3 mb-4">
+    <h2 class="font-display font-bold text-lg">Envios</h2>
+    <span class="h-px flex-1 bg-linha"></span>
+    <span class="rotulo">atualiza a cada 3 s</span>
+  </div>
   <div hx-get="/parcial/jobs" hx-trigger="every 3s" hx-swap="innerHTML">
     {% include "_jobs.html" %}
   </div>
