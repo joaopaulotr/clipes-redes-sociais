@@ -95,9 +95,17 @@ class Vigia(threading.Thread):
         self.pasta = settings.ao_vivo_dir / login
 
     # -- helpers --
+    _cache_ativo: tuple[float, bool] = (0.0, True)
+
     def _ativo(self) -> bool:
-        v = db.vigiado(self.login)
-        return bool(v and v["ativo"]) and not self.parar.is_set() and not self.parar_global.is_set()
+        if self.parar.is_set() or self.parar_global.is_set():
+            return False
+        quando, valor = self._cache_ativo
+        if time.monotonic() - quando > 5:  # the session loop ticks ~5x/s; don't hit SQLite each time
+            v = db.vigiado(self.login)
+            valor = bool(v and v["ativo"])
+            self._cache_ativo = (time.monotonic(), valor)
+        return valor
 
     def _esperar(self, s: float) -> None:
         fim = time.monotonic() + s

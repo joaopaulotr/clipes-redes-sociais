@@ -162,3 +162,15 @@ def janelas_sem_sinal(duracao: float, quantidade: int, janela_s: int) -> list[tu
         out.append((t, min(duracao, t + janela_s), 0.0))
         t += passo
     return out
+
+
+def filtrar_ja_clipados(
+    janelas: list[tuple[float, float, float]], offsets: list[float], margem_s: float = 60
+) -> list[tuple[float, float, float]]:
+    """Drops VOD windows within `margem_s` of a moment already clipped live (spec 002, RF-011)."""
+    if not offsets:
+        return janelas
+    return [
+        (a, b, n) for a, b, n in janelas
+        if not any(a - margem_s <= o <= b + margem_s for o in offsets)
+    ]
