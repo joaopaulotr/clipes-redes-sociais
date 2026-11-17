@@ -50,7 +50,7 @@ Formato: `- [ ] T001 [P] [H1] Descrição` · `[P]` paralelo · `[Hn]` história
 
 - [x] T025 Teste ponta a ponta com LLM simulado (upload com 2 picos → 2 clipes; vídeo curto → 1 clipe)
 - [x] T026 Teste real: YouTube (metadados, heatmap, comentários, áudio, trecho, Whisper)
-- [ ] T027 Teste real com chave da OpenAI (triagem, finalização, webcam)
+- [x] T027 Teste real com chave da OpenAI (triagem, finalização, webcam)
 - [ ] T028 Teste real de VOD da Twitch com chat replay
 - [ ] T029 Teste real de clipe da Twitch e de Kick
 - [ ] T030 Medir custo real na primeira semana e atualizar `plan.md` (CS-002, CS-003)

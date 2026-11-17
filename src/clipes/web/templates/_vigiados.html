@@ -1,0 +1,67 @@
+{% if not vigiados %}
+<div class="painel border-dashed p-10 text-center">
+  <p class="font-display font-bold mb-1">Nenhum canal ainda</p>
+  <p class="text-sm text-nevoa">Cadastre um streamer com campanha ativa para começar a vigiar.</p>
+</div>
+{% else %}
+<div class="painel overflow-hidden divide-y divide-linha">
+  {% for v in vigiados %}
+  {% set rotulo, cor = STATUS_VIGIADO.get(v.status, (v.status, "chip")) %}
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-5 py-4 {{ 'opacity-60' if not v.ativo else '' }}">
+    <span class="grid place-items-center size-10 shrink-0 rounded-lg bg-roxo-fundo border border-roxo/40 font-display font-bold text-roxo-claro">{{ v.login[:1]|upper }}</span>
+    <div class="min-w-0 flex-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="https://www.twitch.tv/{{ v.login }}" target="_blank" rel="noopener" class="font-semibold hover:text-roxo-claro">{{ v.nome or v.login }}</a>
+        {% if v.ativo %}<span class="{{ cor }}">{{ rotulo }}</span>{% else %}<span class="chip">desativado</span>{% endif %}
+      </div>
+      <div class="font-mono text-xs text-nevoa mt-1 truncate">
+        prioridade {{ v.prioridade }} · {{ v.limite_hora }}/hora · {{ v.clipes_ao_vivo }} clipes ao vivo
+        {% if v.ultimo_pico %} · último pico {{ v.ultimo_pico|hora }}{% endif %}
+      </div>
+      <div class="text-xs mt-1 truncate {{ 'text-nevoa' if v.autorizacao else 'text-alerta' }}">
+        {{ v.autorizacao or "sem campanha/autorização registrada" }}
+      </div>
+      {% set cegos = v.cegos|json %}
+      {% if cegos %}
+      <div class="font-mono text-[11px] text-[#ff9db3] mt-1 truncate">
+        sem vigiar: {% for c in cegos[-3:] %}{{ c[0]|hora }}–{{ (c[1]|hora)[-5:] }} ({{ c[2] }}){% if not loop.last %} · {% endif %}{% endfor %}
+      </div>
+      {% endif %}
+      {% if v.erro %}<div class="text-xs text-alerta mt-1 truncate">{{ v.erro }}</div>{% endif %}
+    </div>
+    <div class="flex gap-2">
+      {% if v.ativo %}
+      <form action="/monitor/canal/{{ v.login }}/desativar" method="post"><button class="btn btn-pequeno">Desativar</button></form>
+      {% else %}
+      <form action="/monitor/canal/{{ v.login }}/ativar" method="post"><button class="btn btn-pequeno btn-branco">Ativar</button></form>
+      <form action="/monitor/canal/{{ v.login }}/apagar" method="post" onsubmit="return confirm('Remover {{ v.login }} da lista? O histórico de clipes continua.')">
+        <button class="btn btn-pequeno btn-perigo">Remover</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if momentos %}
+<div class="mt-8">
+  <div class="flex items-center gap-3 mb-3">
+    <h3 class="font-display font-bold">Últimos picos</h3>
+    <span class="h-px flex-1 bg-linha"></span>
+  </div>
+  <div class="painel overflow-hidden divide-y divide-linha font-mono text-xs">
+    {% for m in momentos %}
+    <div class="flex items-center gap-3 px-4 py-2.5">
+      <span class="text-nevoa tabular-nums w-24">{{ m.instante|hora }}</span>
+      <span class="w-28 truncate text-giz">{{ m.login }}</span>
+      <span class="text-nevoa">z {{ m.forca }}</span>
+      <span class="ml-auto">
+        {% if m.job_id %}<a href="/job/{{ m.job_id }}" class="chip chip-roxo hover:text-white">virou clipe →</a>
+        {% else %}<span class="chip">não clipado · {{ m.motivo }}</span>{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

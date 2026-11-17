@@ -1,6 +1,6 @@
 # Spec: Monitor de lives com aviso no celular
 
-**Branch**: `002-monitor-lives` · **Criada**: 2026-11-11 · **Status**: Rascunho
+**Branch**: `002-monitor-lives` · **Criada**: 2026-11-11 · **Status**: Aprovada
 
 > O quê e por quê. Como será implementado: `plan.md` (a escrever). Andamento: `tasks.md` (a escrever).
 
@@ -118,8 +118,7 @@ porque o momento mais forte já foi clipado ao vivo.
   render e revisão do MVP1.
 - **RF-007**: O sistema DEVE respeitar um limite de clipes por hora por canal, configurável.
 - **RF-008**: O sistema DEVE avisar o usuário no celular quando um clipe entra em revisão, agrupando
-  avisos próximos. [PRECISA ESCLARECER: por qual canal de aviso — Telegram, notificação push do
-  celular (ex.: ntfy) ou outro?]
+  avisos próximos, por Telegram.
 - **RF-009**: O aviso DEVE trazer um link que abre o clipe para revisão, também fora de casa, por
   um acesso remoto seguro (o site não tem senha e não pode ficar aberto na internet).
 - **RF-010**: O usuário DEVE poder silenciar e reativar os avisos.
@@ -129,11 +128,10 @@ porque o momento mais forte já foi clipado ao vivo.
   intervalos em que não conseguiu vigiar.
 - **RF-013**: Nenhum clipe gerado ao vivo DEVE ser considerado pronto para postar sem aprovação do
   usuário (princípio I).
-- **RF-014**: O sistema DEVE vigiar lives da Twitch. [PRECISA ESCLARECER: Kick e YouTube Live também
-  nesta spec, ou só Twitch agora?]
-- **RF-015**: A vigilância DEVE rodar enquanto o computador do usuário estiver ligado.
-  [PRECISA ESCLARECER: basta rodar com o Mac ligado, ou é preciso vigiar 24/7 mesmo com o Mac
-  desligado? 24/7 exige servidor pago e uma justificativa pelo princípio IV.]
+- **RF-014**: O sistema DEVE vigiar lives da Twitch. Kick e YouTube Live ficam para uma spec
+  seguinte, depois que esta estiver validada.
+- **RF-015**: A vigilância DEVE rodar localmente, enquanto o computador do usuário estiver ligado
+  (sem servidor pago).
 
 ### Entidades
 
@@ -166,5 +164,8 @@ porque o momento mais forte já foi clipado ao vivo.
 ## Esclarecimentos
 
 - 2026-11-11 P: Revisar só em casa ou também fora? → R: Também fora de casa, com acesso remoto seguro.
-- 2026-11-11 Proposta (a confirmar com o usuário): publicação fica fora desta spec; a prioridade é
-  velocidade antes de 19/nov e publicação vira spec própria.
+- 2026-11-17 P: Por onde chega o aviso no celular? → R: Telegram.
+- 2026-11-17 P: Quais plataformas nesta versão? → R: Só Twitch; YouTube e Kick depois que esta etapa der certo.
+- 2026-11-17 P: Rodar 24/7 em servidor ou local? → R: Só local, com o computador ligado.
+- 2026-11-17 P: Publicação e Drive entram aqui? → R: Não; o usuário ainda não tem Drive. Ficam para spec futura.
+- 2026-11-17 P: Prioridade até o lançamento? → R: Entregar a spec inteira até 19/nov, o melhor possível.

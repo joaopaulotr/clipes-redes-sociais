@@ -46,6 +46,7 @@ class Info:
     comentarios: list[str] = field(default_factory=list)
     url: str = ""
     arquivo_local: Path | None = None
+    inicio_ts: float | None = None  # epoch UTC do início da live (VOD da Twitch), para spec 002
 
 
 def _opts_base() -> dict[str, Any]:
@@ -63,11 +64,11 @@ def duracao_arquivo(caminho: Path) -> float:
     return float(out)
 
 
-def resolver(origem: str, tipo: str | None = None) -> Info:
+def resolver(origem: str, tipo: str | None = None, canal: str | None = None) -> Info:
     tipo = tipo or classificar(origem)
-    if tipo == "upload":
+    if tipo in ("upload", "ao_vivo"):
         p = Path(origem)
-        return Info(tipo, p.stem, "upload", duracao_arquivo(p), arquivo_local=p)
+        return Info(tipo, p.stem, canal or "upload", duracao_arquivo(p), arquivo_local=p)
 
     opts = _opts_base() | {"skip_download": True}
     if tipo == "youtube":
@@ -86,6 +87,7 @@ def resolver(origem: str, tipo: str | None = None) -> Info:
         heatmap=info.get("heatmap") or [],
         comentarios=comentarios,
         url=info.get("webpage_url") or origem,
+        inicio_ts=float(info["timestamp"]) if info.get("timestamp") else None,
     )
 
 

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block titulo %}Monitor · Clipes{% endblock %}
+{% block conteudo %}
+<div class="entrar mb-8">
+  <p class="rotulo mb-3">Twitch · ao vivo</p>
+  <h1 class="titulo-tela text-3xl sm:text-5xl max-w-3xl">
+    A live explode, <span class="text-roxo">o clipe nasce.</span>
+  </h1>
+  <p class="text-sm text-nevoa max-w-2xl mt-3">Só canais com campanha ou autorização registrada são vigiados.
+    Quando o chat dispara, o trecho vira um clipe em revisão e você recebe o aviso no Telegram.
+    Até {{ max_lives }} lives gravadas ao mesmo tempo, por prioridade.</p>
+</div>
+
+{% if msg %}<div class="entrar mb-6 painel px-4 py-3 text-sm border-roxo/50"><span class="chip chip-roxo mr-2">ok</span>{{ msg }}</div>{% endif %}
+{% if erro %}<div class="entrar mb-6 flex items-center gap-2 rounded-xl border border-alerta/50 bg-alerta-fundo px-4 py-3 text-sm"><span class="chip chip-alerta">atenção</span>{{ erro }}</div>{% endif %}
+
+<div class="grid gap-6 lg:grid-cols-[1.4fr_1fr] mb-12">
+  <section class="entrar painel relative overflow-hidden p-5 sm:p-6" style="--i:1">
+    <div class="pointer-events-none absolute -right-20 -top-20 size-60 rounded-full bg-roxo/20 blur-3xl"></div>
+    <h2 class="relative font-display font-bold text-lg mb-4">Vigiar canal</h2>
+    <form action="/monitor/canal" method="post" class="relative space-y-4">
+      <label class="block">
+        <span class="rotulo block mb-1.5">Canal da Twitch</span>
+        <input name="link" required placeholder="https://www.twitch.tv/fulano  ou  fulano" class="campo font-mono text-sm">
+      </label>
+      <label class="block">
+        <span class="rotulo block mb-1.5">Campanha ou autorização (obrigatório para ativar)</span>
+        <input name="autorizacao" placeholder="Link da campanha no Content Rewards, ou 'autorizado por DM em 17/11'" class="campo text-sm">
+      </label>
+      <div class="flex flex-wrap items-end gap-4">
+        <label class="text-sm">
+          <span class="rotulo block mb-1.5">Prioridade (0–10)</span>
+          <input type="number" name="prioridade" value="5" min="0" max="10" class="campo w-24 font-mono">
+        </label>
+        <label class="text-sm">
+          <span class="rotulo block mb-1.5">Clipes por hora</span>
+          <input type="number" name="limite_hora" value="{{ limite_padrao }}" min="1" max="30" class="campo w-24 font-mono">
+        </label>
+        <label class="flex items-center gap-2 text-sm pb-2 cursor-pointer">
+          <input type="checkbox" name="ativar" value="1" checked class="size-4 accent-[#9d5cff]">
+          Ativar agora
+        </label>
+        <button class="btn btn-primario ml-auto h-11 px-6">Salvar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="entrar painel p-5 sm:p-6 flex flex-col" style="--i:2">
+    <div class="flex items-center gap-3 mb-4">
+      <h2 class="font-display font-bold text-lg">Avisos no Telegram</h2>
+      {% if not telegram_ok %}<span class="chip chip-alerta">não configurado</span>
+      {% elif silenciado %}<span class="chip">silenciado</span>
+      {% else %}<span class="chip chip-roxo chip-vivo">ligado</span>{% endif %}
+    </div>
+    {% if not telegram_ok %}
+    <ol class="text-sm text-nevoa space-y-1.5 list-decimal pl-5 mb-4">
+      <li>No Telegram, fale com <b class="text-giz">@BotFather</b> → <code class="font-mono text-roxo-claro">/newbot</code> e copie o token.</li>
+      <li>Coloque <code class="font-mono text-roxo-claro">TELEGRAM_TOKEN=</code> no <code class="font-mono">.env</code>.</li>
+      <li>Mande “oi” ao seu bot e rode <code class="font-mono text-roxo-claro">uv run python -m clipes.avisos</code>.</li>
+      <li>Cole o <code class="font-mono text-roxo-claro">TELEGRAM_CHAT_ID</code> no <code class="font-mono">.env</code> e reinicie.</li>
+    </ol>
+    {% else %}
+    <p class="text-sm text-nevoa mb-4">Clipes que chegam juntos viram uma mensagem só. O link abre
+      <code class="font-mono text-roxo-claro break-all">{{ url_base }}</code>.</p>
+    {% endif %}
+    <div class="mt-auto flex flex-wrap gap-2">
+      <form action="/monitor/avisos/teste" method="post"><button class="btn btn-pequeno">Enviar teste</button></form>
+      {% if silenciado %}
+      <form action="/monitor/avisos/reativar" method="post"><button class="btn btn-pequeno btn-branco">Reativar avisos</button></form>
+      {% else %}
+      <form action="/monitor/avisos/silenciar" method="post"><button class="btn btn-pequeno">Silenciar</button></form>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<section class="entrar" style="--i:3">
+  <div class="flex items-center gap-3 mb-4">
+    <h2 class="font-display font-bold text-lg">Canais vigiados</h2>
+    <span class="h-px flex-1 bg-linha"></span>
+    <span class="rotulo">atualiza a cada 5 s</span>
+  </div>
+  <div hx-get="/parcial/vigiados" hx-trigger="every 5s" hx-swap="innerHTML">
+    {% include "_vigiados.html" %}
+  </div>
+</section>
+{% endblock %}

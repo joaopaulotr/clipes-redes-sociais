@@ -13,5 +13,7 @@ fi
 PORT="$(grep -E '^PORT=' .env | cut -d= -f2)"
 PORT="${PORT:-8000}"
 (sleep 3 && open "http://localhost:${PORT}" 2>/dev/null || true) &
-
+if command -v caffeinate >/dev/null 2>&1; then
+  exec caffeinate -i uv run python -m clipes
+fi
 uv run python -m clipes
