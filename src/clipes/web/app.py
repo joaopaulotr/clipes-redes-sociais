@@ -1,17 +1,19 @@
 """Site local: enviar vídeos e revisar clipes."""
 
+import json
 import logging
 import shutil
 import threading
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from clipes import db, worker
+from clipes import avisos, db, monitor, twitch, worker
 from clipes.config import settings
 from clipes.fontes import classificar
 
@@ -30,12 +32,40 @@ STATUS_JOB = {
 }
 templates.env.globals["STATUS_JOB"] = STATUS_JOB
 
+STATUS_VIGIADO = {
+    "offline": ("Offline", "chip"),
+    "gravando": ("Ao vivo · gravando", "chip chip-roxo chip-vivo"),
+    "espera": ("Ao vivo · na espera", "chip chip-branco"),
+    "erro": ("Erro", "chip chip-alerta"),
+}
+templates.env.globals["STATUS_VIGIADO"] = STATUS_VIGIADO
+
+
+def _hora(iso: str | None) -> str:
+    """UTC ISO -> local 'dd/mm HH:MM'."""
+    if not iso:
+        return ""
+    try:
+        return datetime.fromisoformat(iso).astimezone().strftime("%d/%m %H:%M")
+    except ValueError:
+        return iso
+
+
+templates.env.filters["hora"] = _hora
+templates.env.filters["json"] = lambda s: json.loads(s) if s else []
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.iniciar()
-    t = threading.Thread(target=worker.loop, args=(_parar,), daemon=True, name="worker")
-    t.start()
+    threads = [
+        threading.Thread(target=worker.loop, args=(_parar, False), daemon=True, name="worker"),
+        threading.Thread(target=worker.loop, args=(_parar, True), daemon=True, name="worker-ao-vivo"),
+        threading.Thread(target=monitor.loop, args=(_parar,), daemon=True, name="monitor"),
+        threading.Thread(target=avisos.loop, args=(_parar,), daemon=True, name="avisos"),
+    ]
+    for t in threads:
+        t.start()
     yield
     _parar.set()
 
@@ -131,7 +161,7 @@ def apagar(job_id: int):
     if j and j["status"] not in ("pronto", "erro", "na_fila"):
         raise HTTPException(409, "job em andamento")
     shutil.rmtree(settings.clipes_dir / str(job_id), ignore_errors=True)
-    if j and j["tipo"] == "upload":
+    if j and j["tipo"] in ("upload", "ao_vivo"):
         Path(j["origem"]).unlink(missing_ok=True)
     db.apagar_job(job_id)
     return RedirectResponse("/", status_code=303)
@@ -175,3 +205,86 @@ def canais(request: Request):
 def esquecer(nome: str = Form(...)):
     db.esquecer_canal(nome)
     return RedirectResponse("/canais", status_code=303)
+
+
+# ---------- monitor de lives (spec 002) ----------
+
+@app.get("/monitor", response_class=HTMLResponse)
+def ver_monitor(request: Request, msg: str = "", erro: str = ""):
+    return templates.TemplateResponse(request, "monitor.html", {
+        "vigiados": db.listar_vigiados(), "momentos": db.momentos_recentes(15),
+        "telegram_ok": avisos.configurado(), "silenciado": avisos.silenciado(),
+        "url_base": settings.url_base, "limite_padrao": settings.limite_hora_padrao,
+        "max_lives": settings.max_lives, "msg": msg, "erro": erro,
+    })
+
+
+@app.get("/parcial/vigiados", response_class=HTMLResponse)
+def parcial_vigiados(request: Request):
+    return templates.TemplateResponse(request, "_vigiados.html", {
+        "vigiados": db.listar_vigiados(), "momentos": db.momentos_recentes(15),
+    })
+
+
+def _volta(msg: str = "", erro: str = "") -> RedirectResponse:
+    from urllib.parse import urlencode
+
+    q = urlencode({k: v for k, v in (("msg", msg), ("erro", erro)) if v})
+    return RedirectResponse("/monitor" + (f"?{q}" if q else ""), status_code=303)
+
+
+@app.post("/monitor/canal")
+def salvar_canal(
+    link: str = Form(...), autorizacao: str = Form(""), prioridade: int = Form(0),
+    limite_hora: int = Form(4), ativar: str = Form(""),
+):
+    login = twitch.login_do_link(link)
+    if not login:
+        return _volta(erro="Link ou nome de canal da Twitch inválido.")
+    autorizacao = autorizacao.strip()[:500]
+    db.salvar_vigiado(login, None, autorizacao or None, max(0, min(prioridade, 10)),
+                      max(1, min(limite_hora, 30)))
+    if ativar:
+        if not autorizacao:
+            return _volta(erro=f"{login} salvo, mas não ativado: informe a campanha ou autorização.")
+        db.atualizar_vigiado(login, ativo=1)
+    return _volta(msg=f"{login} salvo" + (" e ativado." if ativar else "."))
+
+
+@app.post("/monitor/canal/{login}/{acao}")
+def acao_canal(login: str, acao: str):
+    v = db.vigiado(login)
+    if not v:
+        raise HTTPException(404)
+    if acao == "ativar":
+        if not v["autorizacao"]:  # RF-002
+            return _volta(erro=f"Informe a campanha ou autorização de {login} antes de ativar.")
+        db.atualizar_vigiado(login, ativo=1)
+    elif acao == "desativar":
+        db.atualizar_vigiado(login, ativo=0)
+    elif acao == "apagar":
+        if v["ativo"]:
+            return _volta(erro="Desative o canal antes de apagar.")
+        db.apagar_vigiado(login)
+    else:
+        raise HTTPException(400)
+    return _volta()
+
+
+@app.post("/monitor/avisos/{acao}")
+def acao_avisos(acao: str):
+    if acao == "silenciar":
+        avisos.silenciar(True)
+    elif acao == "reativar":
+        avisos.silenciar(False)
+    elif acao == "teste":
+        if not avisos.configurado():
+            return _volta(erro="Configure TELEGRAM_TOKEN e TELEGRAM_CHAT_ID no .env e reinicie.")
+        try:
+            avisos.enviar_teste()
+        except Exception as e:
+            return _volta(erro=f"Telegram recusou: {str(e)[:200]}")
+        return _volta(msg="Mensagem de teste enviada. Confira o Telegram.")
+    else:
+        raise HTTPException(400)
+    return _volta()

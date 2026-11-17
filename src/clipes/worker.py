@@ -6,6 +6,7 @@ import threading
 import time
 import traceback
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -66,17 +67,17 @@ def _processar_candidato(info: fontes.Info, job_id: int, clipe_id: int, pasta_tr
     inicio, fim = c["inicio"], c["fim"]
     trecho = pasta_trab / f"trecho_{clipe_id}.mp4"
 
-    if info.duracao <= CURTO_S:
-        fontes.baixar_inteiro(info, trecho)
+    if info.duracao <= CURTO_S or info.tipo == "ao_vivo":
+        trecho = fontes.baixar_inteiro(info, trecho)
     else:
         fontes.baixar_trecho(info, inicio, fim, trecho)
     dur_trecho = fontes.duracao_arquivo(trecho)
 
     palavras, _ = transcricao.transcrever(trecho)
 
-    # 1) LLM simples: triagem (pula em vídeo curto — já é o momento)
+    # 1) LLM simples: triagem (pula em vídeo curto — já é o momento; ao vivo sempre passa, spec 002)
     nota = 7
-    if info.duracao > CURTO_S:
+    if info.duracao > CURTO_S or info.tipo == "ao_vivo":
         t = llm.triar(info.titulo, info.canal, transcricao.texto_puro(palavras), c["nota_sinal"] or 0)
         nota = t.nota
         db.atualizar_clipe(clipe_id, nota_llm=t.nota, categoria=t.categoria)
@@ -93,7 +94,7 @@ def _processar_candidato(info: fontes.Info, job_id: int, clipe_id: int, pasta_tr
     ini_rel = min(max(0.0, final.inicio), max(0.0, dur_trecho - settings.clipe_min_s))
     fim_rel = min(dur_trecho, max(final.fim, ini_rel + settings.clipe_min_s))
     fim_rel = min(fim_rel, ini_rel + settings.clipe_max_s)
-    if info.duracao <= CURTO_S:
+    if info.duracao <= CURTO_S and info.tipo != "ao_vivo":
         ini_rel, fim_rel = 0.0, dur_trecho
 
     db.atualizar_clipe(
@@ -112,6 +113,18 @@ def _processar_candidato(info: fontes.Info, job_id: int, clipe_id: int, pasta_tr
     db.atualizar_clipe(clipe_id, status="revisao", arquivo=str(saida))
 
 
+def _sem_momentos_ja_clipados(info: fontes.Info, login: str | None, janelas: list) -> list:
+    """VOD of a watched live: skip moments the monitor already clipped (spec 002, RF-011)."""
+    if info.tipo != "twitch_vod" or not info.inicio_ts or not login:
+        return janelas
+    offsets = [datetime.fromisoformat(i).timestamp() - info.inicio_ts for i in db.momentos_clipados(login)]
+    offsets = [o for o in offsets if 0 <= o <= info.duracao]
+    filtradas = sinais.filtrar_ja_clipados(janelas, offsets)
+    if len(filtradas) != len(janelas):
+        log.info("VOD: %d janelas puladas (já clipadas ao vivo)", len(janelas) - len(filtradas))
+    return filtradas
+
+
 def processar(job_id: int) -> None:
     j = db.job(job_id)
     assert j
@@ -121,13 +134,14 @@ def processar(job_id: int) -> None:
     pasta_out.mkdir(parents=True, exist_ok=True)
 
     _etapa(job_id, "lendo metadados", "resolvendo")
-    info = fontes.resolver(j["origem"], j["tipo"])
+    login = j["canal"]  # spec 002: login da Twitch nos envios do monitor
+    info = fontes.resolver(j["origem"], j["tipo"], login)
     db.atualizar_job(job_id, tipo=info.tipo, titulo=info.titulo, canal=info.canal, duracao=info.duracao)
 
     # já processado antes (app reiniciado): reaproveita candidatos pendentes
     pendentes = db.clipes_do_job(job_id, ("candidato", "renderizando"))
     if not pendentes and not db.clipes_do_job(job_id):
-        if info.duracao <= CURTO_S:
+        if info.duracao <= CURTO_S or info.tipo == "ao_vivo":
             janelas = [(0.0, info.duracao, 1.0)]
         else:
             _etapa(job_id, "procurando momentos (chat, áudio, replays)", "sinais")
@@ -137,6 +151,7 @@ def processar(job_id: int) -> None:
             janelas = sinais.escolher_janelas(
                 score, qtd, settings.janela_s, settings.distancia_min_s, info.duracao
             ) or sinais.janelas_sem_sinal(info.duracao, qtd, settings.janela_s)
+            janelas = _sem_momentos_ja_clipados(info, login, janelas)
             log.info("job %s: sinais=%s, %d candidatos", job_id, list(series), len(janelas))
         for ini, fim, nota in janelas:
             db.criar_clipe(job_id, ini, fim, nota)
@@ -161,9 +176,10 @@ def processar(job_id: int) -> None:
     _etapa(job_id, f"{prontos} clipes prontos", "pronto")
 
 
-def loop(parar: threading.Event) -> None:
+def loop(parar: threading.Event, ao_vivo: bool | None = None) -> None:
+    """ao_vivo=True: só envios do monitor (não esperam VOD longo); False: o resto; None: tudo."""
     while not parar.is_set():
-        j = db.pegar_proximo_job()
+        j = db.pegar_proximo_job(ao_vivo)
         if not j:
             parar.wait(2)
             continue

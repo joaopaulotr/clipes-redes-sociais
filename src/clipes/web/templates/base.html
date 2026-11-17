@@ -134,6 +134,7 @@
       </a>
       {% set aqui = request.url.path %}
       <a href="/" class="text-sm px-3 py-1.5 rounded-lg {{ 'bg-grafite text-giz' if aqui == '/' or aqui.startswith('/job') else 'text-nevoa hover:text-giz' }}">Envios</a>
+      <a href="/monitor" class="text-sm px-3 py-1.5 rounded-lg {{ 'bg-grafite text-giz' if aqui.startswith('/monitor') else 'text-nevoa hover:text-giz' }}">Monitor</a>
       <a href="/canais" class="text-sm px-3 py-1.5 rounded-lg {{ 'bg-grafite text-giz' if aqui.startswith('/canais') else 'text-nevoa hover:text-giz' }}">Canais</a>
       <div class="ml-auto hidden sm:flex items-center gap-2 font-mono text-xs text-nevoa">
         <span class="chip chip-roxo chip-vivo">rec</span>
