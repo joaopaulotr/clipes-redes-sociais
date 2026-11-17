@@ -17,7 +17,7 @@ from clipes.config import settings
 log = logging.getLogger("clipes.avisos")
 
 SILENCIO = "avisos_silenciados"
-QUIETO_S = 15     # wait until no new clip arrived for this long, then send one grouped message
+QUIETO_S = 15
 MAX_ITENS = 8     # more than this in one message: list the first ones + "and N more"
 
 
