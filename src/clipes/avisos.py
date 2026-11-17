@@ -18,7 +18,7 @@ log = logging.getLogger("clipes.avisos")
 
 SILENCIO = "avisos_silenciados"
 QUIETO_S = 15
-MAX_ITENS = 8     # more than this in one message: list the first ones + "and N more"
+MAX_ITENS = 8
 
 
 def configurado() -> bool:
